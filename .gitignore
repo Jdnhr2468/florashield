@@ -1,3 +1,4 @@
+@"
 # Python
 backend/venv/
 backend/__pycache__/
@@ -7,13 +8,15 @@ backend/**/__pycache__/
 # Env secrets
 backend/.env
 
-# Database (на Railway будет своя, локальную не коммитим)
+# Database
 backend/plant_disease.db
 
 # Node
+node_modules/
 frontend/node_modules/
 frontend/build/
 
 # OS
 .DS_Store
 Thumbs.db
+"@ | Out-File -FilePath .gitignore -Encoding utf8
