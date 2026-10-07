@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
@@ -10,6 +11,8 @@ from datetime import datetime, timedelta
 from utils.email_service import send_reset_email, send_verification_email
 
 router = APIRouter()
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -52,7 +55,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    verify_link = f"http://localhost:3000/verify-email?token={verification_token}"
+    verify_link = f"{FRONTEND_URL}/verify-email?token={verification_token}"
     try:
         send_verification_email(new_user.email, verify_link)
     except Exception as e:
@@ -117,7 +120,7 @@ def resend_verification(data: ResendVerificationRequest, db: Session = Depends(g
     user.verification_token_expiry = datetime.utcnow() + timedelta(hours=24)
     db.commit()
 
-    verify_link = f"http://localhost:3000/verify-email?token={verification_token}"
+    verify_link = f"{FRONTEND_URL}/verify-email?token={verification_token}"
     try:
         send_verification_email(user.email, verify_link)
     except Exception as e:
@@ -139,7 +142,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
     db.commit()
 
-    reset_link = f"http://localhost:3000/reset-password?token={token}"
+    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
 
     try:
         send_reset_email(user.email, reset_link)
