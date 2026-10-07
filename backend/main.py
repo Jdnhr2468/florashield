@@ -1,3 +1,4 @@
+import os
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -14,12 +15,14 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Plant Disease Detection API")
 
-# Разрешаем запросы с любого адреса (для разработки; позже можно ограничить)
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[FRONTEND_URL, "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
 )
 
 app.include_router(analyze_router)
@@ -30,4 +33,3 @@ app.include_router(sensors_router)
 @app.get("/")
 def read_root():
     return {"message": "The Plant Disease Detection API is operational.!"}
-
