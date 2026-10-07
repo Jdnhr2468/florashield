@@ -14,6 +14,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [passwordStrength, setPasswordStrength] = useState(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   // Инлайн-ошибки по полям вместо одного общего баннера
   const [errors, setErrors] = useState({});
@@ -52,6 +53,7 @@ function AuthPage() {
       if (isLogin) {
         const response = await api.post('/login', { email, password });
         login(response.data.access_token);
+        localStorage.setItem('userEmail', email);
         navigate('/dashboard');
       } else {
         await api.post('/register', { email, password });
@@ -66,6 +68,7 @@ function AuthPage() {
 
         if (err.response?.status === 403) {
           setErrors({ general: detail + ' — check your inbox or request a new link below.' });
+          setNeedsVerification(true);
         } else if (detail.toLowerCase().includes('email') || detail.toLowerCase().includes('существует')) {
           setErrors({ email: detail });
         } else if (detail.toLowerCase().includes('пароль') || detail.toLowerCase().includes('password')) {
@@ -88,6 +91,18 @@ function AuthPage() {
       setForgotMessage('If this email exists, a reset link has been sent.');
     } catch (err) {
       setErrors({ email: 'Failed to send reset email' });
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setForgotMessage('');
+    try {
+      await api.post('/resend-verification', { email });
+      setForgotMessage('Verification email sent — please check your inbox.');
+      setNeedsVerification(false);
+      setErrors({});
+    } catch (err) {
+      setErrors({ general: 'Failed to resend verification email' });
     }
   };
 
@@ -158,9 +173,20 @@ function AuthPage() {
           </p>
 
           {errors.general && (
-            <div className="bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3 mb-4 flex items-center gap-2">
-              <AlertTriangle size={16} />
-              {errors.general}
+            <div className="bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3 mb-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={16} />
+                {errors.general}
+              </div>
+              {needsVerification && (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  className="font-semibold text-xs text-red-600 underline text-left w-fit"
+                >
+                  Resend verification email
+                </button>
+              )}
             </div>
           )}
 
@@ -182,7 +208,7 @@ function AuthPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); clearFieldError('email'); setForgotMessage(''); }}
+                  onChange={(e) => { setEmail(e.target.value); clearFieldError('email'); setForgotMessage(''); setNeedsVerification(false); }}
                   placeholder="example@gmail.com"
                   required
                   className="flex-1 outline-none bg-transparent font-normal text-sm text-textDark placeholder:text-gray-400"
